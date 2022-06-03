@@ -15,8 +15,8 @@
 #' @return Does not have a return object.
 #' @export
 
-ds.asDate <- function(x.name, format = "%Y-%m-%d", origin = NULL, newobj = NULL, add_as_column = TRUE, datasources = NULL){
-
+ds.asDate <- function(x.name, format = NULL, origin = NULL, newobj = NULL, add_as_column = TRUE, datasources = NULL){
+  # TODO pensar que fer amb el format, no es poden passar caracters especials! format = "%Y-%m-%d"
   if (is.null(datasources)) {
     datasources <- DSI::datashield.connections_find()
   }
@@ -39,9 +39,12 @@ ds.asDate <- function(x.name, format = "%Y-%m-%d", origin = NULL, newobj = NULL,
   DSI::datashield.assign(datasources, newobj, calltext)
 
   if(grepl("[$]", x.name) & add_as_column){
-    ds.cbind(x = c(stringr::str_extract_all(x.name, "^\\w+")[[1]], newobj),
-             newobj = stringr::str_extract_all(x.name, "^\\w+")[[1]],
-             datasources = datasources)
+    DSI::datashield.assign.expr(datasources,
+                                stringr::str_extract_all(x.name, "^\\w+")[[1]],
+                                paste0("cbind(", stringr::str_extract_all(x.name, "^\\w+")[[1]], ", ", newobj, ")"))
+    # ds.cbind(x = c(stringr::str_extract_all(x.name, "^\\w+")[[1]], newobj),
+    #          newobj = stringr::str_extract_all(x.name, "^\\w+")[[1]],
+    #          datasources = datasources)
     invisible(ds.rm(newobj, datasources = datasources))
   }
 
