@@ -34,6 +34,10 @@ ds.asDate <- function(x.name, format = NULL, origin = NULL, newobj = NULL, add_a
   if(is.null(newobj)){
     newobj <- "asDate.newobj"
   }
+  
+  if(!is.null(format)){
+    format <- sf::rawToHex(serialize(format,  NULL))
+  }
 
   calltext <- call("asDateDS", x.name, format, origin)
   DSI::datashield.assign(datasources, newobj, calltext)
