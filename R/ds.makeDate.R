@@ -186,10 +186,10 @@ ds.makeDate <- function(year.name,
       }
     }
     
-    # Add column to table
+    # Add column to table using dsDates cbind function (requires name parameter)
     DSI::datashield.assign.expr(datasources,
                                 target_table,
-                                paste0("cbind(", target_table, ", ", newobj, ")"))
+                                paste0("cbind(", target_table, ", ", newobj, ", name = '", newobj, "')"))
     # Clean up temporary object
     invisible(ds.rm(newobj, datasources = datasources))
   }
