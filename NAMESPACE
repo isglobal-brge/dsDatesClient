@@ -2,4 +2,5 @@
 
 export(ds.asDate)
 export(ds.dateDiff)
+export(ds.makeDate)
 export(ds.subsetByDate)
