@@ -6,7 +6,7 @@
 \usage{
 ds.asDate(
   x.name,
-  format = "\%Y-\%m-\%d",
+  format = NULL,
   origin = NULL,
   newobj = NULL,
   add_as_column = TRUE,
