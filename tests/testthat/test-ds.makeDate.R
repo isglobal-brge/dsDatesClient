@@ -425,6 +425,178 @@ test_that("ds.makeDate throws error for invalid format", {
   if(exists("server1", envir = .GlobalEnv)) rm(server1, envir = .GlobalEnv)
 })
 
+context("ds.makeDate::dslite::non-existent column - year")
+test_that("ds.makeDate throws clear error for non-existent year column", {
+  # Create test data WITHOUT year_of_birth column
+  person <- data.frame(
+    person_id = 1:3,
+    other_column = c(1, 2, 3)
+  )
+  
+  config <- DSLite::defaultDSConfiguration(include = c("dsDates", "dsBase"))
+  builder <- DSLite::newDSLiteServer(
+    tables = list(person = person),
+    config = config,
+    strict = FALSE
+  )
+  
+  assign("dslite.server", builder, envir = .GlobalEnv)
+  conn <- DSI::dsConnect(DSLite::DSLite(), name = "server1", url = "dslite.server")
+  assign("server1", conn, envir = .GlobalEnv)
+  conns <- list(server1 = conn)
+  DSI::dsAssignTable(conn, "person", "person")
+  
+  # Should get clear error about non-existent column
+  expect_error(
+    ds.makeDate(
+      year.name = "person$year_of_birth",
+      format = "Date",
+      newobj = "birth_date",
+      datasources = conns
+    ),
+    "Cannot access.*year_of_birth.*does not exist.*server"
+  )
+  
+  DSI::datashield.logout(conns)
+  DSI::dsDisconnect(conn)
+  if(exists("dslite.server", envir = .GlobalEnv)) rm(dslite.server, envir = .GlobalEnv)
+  if(exists("server1", envir = .GlobalEnv)) rm(server1, envir = .GlobalEnv)
+})
+
+context("ds.makeDate::dslite::non-existent column - month")
+test_that("ds.makeDate throws clear error for non-existent month column", {
+  # Create test data WITHOUT month_of_birth column
+  person <- data.frame(
+    person_id = 1:3,
+    year_of_birth = c(1990, 1991, 1992)
+    # month_of_birth does not exist
+  )
+  
+  config <- DSLite::defaultDSConfiguration(include = c("dsDates", "dsBase"))
+  builder <- DSLite::newDSLiteServer(
+    tables = list(person = person),
+    config = config,
+    strict = FALSE
+  )
+  
+  assign("dslite.server", builder, envir = .GlobalEnv)
+  conn <- DSI::dsConnect(DSLite::DSLite(), name = "server1", url = "dslite.server")
+  assign("server1", conn, envir = .GlobalEnv)
+  conns <- list(server1 = conn)
+  DSI::dsAssignTable(conn, "person", "person")
+  
+  # Should get clear error about non-existent column
+  expect_error(
+    ds.makeDate(
+      year.name = "person$year_of_birth",
+      month.name = "person$month_of_birth",
+      format = "Date",
+      newobj = "birth_date",
+      datasources = conns
+    ),
+    "Cannot access.*month_of_birth.*does not exist.*server"
+  )
+  
+  DSI::datashield.logout(conns)
+  DSI::dsDisconnect(conn)
+  if(exists("dslite.server", envir = .GlobalEnv)) rm(dslite.server, envir = .GlobalEnv)
+  if(exists("server1", envir = .GlobalEnv)) rm(server1, envir = .GlobalEnv)
+})
+
+context("ds.makeDate::dslite::NA handling - mixed NA values")
+test_that("ds.makeDate handles mixed NA values correctly", {
+  person <- data.frame(
+    person_id = 1:4,
+    year_of_birth = c(1990, NA, 1992, 1993),
+    month_of_birth = c(6, 7, NA, 8),
+    day_of_birth = c(15, 20, 25, NA)
+  )
+  
+  config <- DSLite::defaultDSConfiguration(include = c("dsDates", "dsBase"))
+  builder <- DSLite::newDSLiteServer(
+    tables = list(person = person),
+    config = config,
+    strict = FALSE
+  )
+  
+  assign("dslite.server", builder, envir = .GlobalEnv)
+  conn <- DSI::dsConnect(DSLite::DSLite(), name = "server1", url = "dslite.server")
+  assign("server1", conn, envir = .GlobalEnv)
+  conns <- list(server1 = conn)
+  DSI::dsAssignTable(conn, "person", "person")
+  
+  ds.makeDate(
+    year.name = "person$year_of_birth",
+    month.name = "person$month_of_birth",
+    day.name = "person$day_of_birth",
+    format = "Date",
+    newobj = "birth_date",
+    add_as_column = FALSE,
+    datasources = conns
+  )
+  
+  result <- DSI::datashield.aggregate(conns, quote(birth_date))
+  
+  expect_true(all("Date" %in% class(result[[1]])))
+  expect_length(result[[1]], 4)
+  expect_equal(as.character(result[[1]][1]), "1990-06-15")  # All values present
+  expect_true(is.na(result[[1]][2]))  # Year is NA
+  expect_equal(as.character(result[[1]][3]), "1992-01-25")  # Month NA defaults to 1
+  expect_equal(as.character(result[[1]][4]), "1993-08-01")  # Day NA defaults to 1
+  
+  DSI::datashield.logout(conns)
+  DSI::dsDisconnect(conn)
+  if(exists("dslite.server", envir = .GlobalEnv)) rm(dslite.server, envir = .GlobalEnv)
+  if(exists("server1", envir = .GlobalEnv)) rm(server1, envir = .GlobalEnv)
+})
+
+context("ds.makeDate::dslite::NA handling - all optional components NA")
+test_that("ds.makeDate handles all optional components NA correctly", {
+  person <- data.frame(
+    person_id = 1:3,
+    year_of_birth = c(1990, 1991, 1992),
+    month_of_birth = c(NA_real_, NA_real_, NA_real_),
+    day_of_birth = c(NA_real_, NA_real_, NA_real_)
+  )
+  
+  config <- DSLite::defaultDSConfiguration(include = c("dsDates", "dsBase"))
+  builder <- DSLite::newDSLiteServer(
+    tables = list(person = person),
+    config = config,
+    strict = FALSE
+  )
+  
+  assign("dslite.server", builder, envir = .GlobalEnv)
+  conn <- DSI::dsConnect(DSLite::DSLite(), name = "server1", url = "dslite.server")
+  assign("server1", conn, envir = .GlobalEnv)
+  conns <- list(server1 = conn)
+  DSI::dsAssignTable(conn, "person", "person")
+  
+  ds.makeDate(
+    year.name = "person$year_of_birth",
+    month.name = "person$month_of_birth",
+    day.name = "person$day_of_birth",
+    format = "Date",
+    newobj = "birth_date",
+    add_as_column = FALSE,
+    datasources = conns
+  )
+  
+  result <- DSI::datashield.aggregate(conns, quote(birth_date))
+  
+  expect_true(all("Date" %in% class(result[[1]])))
+  expect_length(result[[1]], 3)
+  # All should default to month=1, day=1
+  expect_equal(as.character(result[[1]][1]), "1990-01-01")
+  expect_equal(as.character(result[[1]][2]), "1991-01-01")
+  expect_equal(as.character(result[[1]][3]), "1992-01-01")
+  
+  DSI::datashield.logout(conns)
+  DSI::dsDisconnect(conn)
+  if(exists("dslite.server", envir = .GlobalEnv)) rm(dslite.server, envir = .GlobalEnv)
+  if(exists("server1", envir = .GlobalEnv)) rm(server1, envir = .GlobalEnv)
+})
+
 #
 # Done
 #

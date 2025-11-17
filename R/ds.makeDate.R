@@ -146,22 +146,47 @@ ds.makeDate <- function(year.name,
     stop("[format] must be either 'Date' or 'POSIXct'", call.=FALSE)
   }
 
-  # Check if inputs are defined
-  dsBaseClient:::isDefined(datasources, year.name)
+  # Check if inputs are defined (this will catch non-existent objects/columns early)
+  tryCatch({
+    dsBaseClient:::isDefined(datasources, year.name)
+  }, error = function(e) {
+    stop(paste0("Cannot access '", year.name, "'. The object or column does not exist on the server. Please verify the object/column name is correct."), call. = FALSE)
+  })
+  
   if(!is.null(month.name)){
-    dsBaseClient:::isDefined(datasources, month.name)
+    tryCatch({
+      dsBaseClient:::isDefined(datasources, month.name)
+    }, error = function(e) {
+      stop(paste0("Cannot access '", month.name, "'. The object or column does not exist on the server. Please verify the object/column name is correct."), call. = FALSE)
+    })
   }
   if(!is.null(day.name)){
-    dsBaseClient:::isDefined(datasources, day.name)
+    tryCatch({
+      dsBaseClient:::isDefined(datasources, day.name)
+    }, error = function(e) {
+      stop(paste0("Cannot access '", day.name, "'. The object or column does not exist on the server. Please verify the object/column name is correct."), call. = FALSE)
+    })
   }
   if(!is.null(hour.name)){
-    dsBaseClient:::isDefined(datasources, hour.name)
+    tryCatch({
+      dsBaseClient:::isDefined(datasources, hour.name)
+    }, error = function(e) {
+      stop(paste0("Cannot access '", hour.name, "'. The object or column does not exist on the server. Please verify the object/column name is correct."), call. = FALSE)
+    })
   }
   if(!is.null(minute.name)){
-    dsBaseClient:::isDefined(datasources, minute.name)
+    tryCatch({
+      dsBaseClient:::isDefined(datasources, minute.name)
+    }, error = function(e) {
+      stop(paste0("Cannot access '", minute.name, "'. The object or column does not exist on the server. Please verify the object/column name is correct."), call. = FALSE)
+    })
   }
   if(!is.null(second.name)){
-    dsBaseClient:::isDefined(datasources, second.name)
+    tryCatch({
+      dsBaseClient:::isDefined(datasources, second.name)
+    }, error = function(e) {
+      stop(paste0("Cannot access '", second.name, "'. The object or column does not exist on the server. Please verify the object/column name is correct."), call. = FALSE)
+    })
   }
 
   if(is.null(newobj)){
@@ -170,7 +195,18 @@ ds.makeDate <- function(year.name,
 
   # Call server-side function
   calltext <- call("makeDateDS", year.name, month.name, day.name, hour.name, minute.name, second.name, format, newobj)
-  DSI::datashield.assign(datasources, newobj, calltext)
+  tryCatch({
+    DSI::datashield.assign(datasources, newobj, calltext)
+  }, error = function(e) {
+    # Check if error is about non-existent columns/objects
+    error_msg <- as.character(e$message)
+    if(grepl("Cannot access", error_msg) || grepl("does not exist", error_msg, ignore.case = TRUE)){
+      stop(error_msg, call. = FALSE)
+    } else {
+      # Re-throw other errors with context
+      stop(paste0("Error creating date from columns: ", error_msg), call. = FALSE)
+    }
+  })
 
   # Handle add_as_column logic
   if(add_as_column){
