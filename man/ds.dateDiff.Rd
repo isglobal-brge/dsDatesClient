@@ -2,11 +2,13 @@
 % Please edit documentation in R/ds.dateDiff.R
 \name{ds.dateDiff}
 \alias{ds.dateDiff}
-\title{Computes diference in days between two date objects}
+\title{Computes difference between two date objects}
 \usage{
 ds.dateDiff(
   time1,
   time2,
+  unit = "days",
+  as_integer = FALSE,
   newobj = NULL,
   add_as_column = TRUE,
   datasources = NULL
@@ -16,6 +18,11 @@ ds.dateDiff(
 \item{time1}{a character string providing the name of a Date object on the server}
 
 \item{time2}{a character string providing the name of a Date object on the server}
+
+\item{unit}{a character string specifying the unit for the difference: "days" (default), "months", or "years"}
+
+\item{as_integer}{a logical value indicating whether to truncate the result to integer values (remove decimals).
+Default is \code{FALSE} (keeps decimal values).}
 
 \item{newobj}{a character string that provides the name for the output object that is stored on the data servers.
 Default \code{"dateDiff"}.}
@@ -29,8 +36,26 @@ This option is ignored if \code{x.name} is not a dataframe. The column name will
 Does not have a return object.
 }
 \description{
-Computes the time difference using the lubridate package. Both input objects have to be created with \link{ds.asDate}.
+Computes the time difference between two Date objects. Both input objects have to be created with \link{ds.asDate} or \link{ds.makeDate}.
+The difference can be computed in days (default), months, or years.
 }
 \details{
-The time difference is computed as an absolute value.
+The time difference is computed as an absolute value. When using months or years, the result is calculated by dividing
+the difference in days by the average number of days per month (30.44) or per year (365.25), respectively.
+}
+\examples{
+\dontrun{
+# Difference in days (default)
+ds.dateDiff(time1 = "birth_date", time2 = "visit_date", unit = "days")
+
+# Difference in months
+ds.dateDiff(time1 = "birth_date", time2 = "visit_date", unit = "months")
+
+# Difference in years
+ds.dateDiff(time1 = "birth_date", time2 = "visit_date", unit = "years")
+
+# Difference in years as integer (truncated)
+ds.dateDiff(time1 = "birth_date", time2 = "visit_date", unit = "years", as_integer = TRUE)
+}
+
 }
